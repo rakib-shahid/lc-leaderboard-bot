@@ -5,13 +5,49 @@ from discord.ext import commands
 from discord import app_commands
 import requests
 import datetime
-import html
+from html.parser import HTMLParser
 from lib.dbfuncs import track_queries
 
 
+class Parser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.out = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'code':
+            self.out.append('`')
+        elif tag == {'strong', 'b'}:
+            self.out.append('**')
+        elif tag == 'li':
+            self.out.append('• ')
+        elif tag in {'em', 'i'}:
+            self.out.append('*')
+        elif tag == 'br':
+            self.out.append('\n')
+
+    def handle_endtag(self, tag):
+        if tag == 'code':
+            self.out.append('`')
+        elif tag == {'strong', 'b'}:
+            self.out.append('**')
+        elif tag == 'li':
+            self.out.append('\n')
+        elif tag in {'em', 'i'}:
+            self.out.append('*')
+
+    def handle_data(self, data):
+        self.out.append(data.replace('`', '\\`'))
+
+    def get_text(self):
+        text = ''.join(self.out)
+        return re.sub(r'\n{2,}', '\n', text).strip()
+
+
 class Daily(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, parser):
         self.bot = bot
+        self.parser = parser
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -35,12 +71,8 @@ class Daily(commands.Cog):
             q_diff = response['difficulty']
             q_prem = response['isPaidOnly']
             q_desc = response['question']
-            q_desc = html.unescape(q_desc)
-            q_desc = re.sub(r"<code>(.*?)</code>", r"`\1`", q_desc, flags=re.DOTALL)
-            q_desc = re.sub(r"<strong>(.*?)</strong>", r"**\1**", q_desc, flags=re.DOTALL)
-            q_desc = re.sub(r"<li>(.*?)</li>", r"• \1", q_desc, flags=re.DOTALL)
-            q_desc = re.sub(r"<.*?>", "", q_desc)
-            q_desc = re.sub(r"\n{2,}", "\n", q_desc).strip()
+            self.parser.feed(q_desc)
+            q_desc = self.parser.get_text()
             topics = [topic['name'] for topic in response['topicTags']]
             hints = response['hints']
             likes = response['likes']
@@ -84,4 +116,4 @@ class Daily(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Daily(bot))
+    await bot.add_cog(Daily(bot), Parser)
