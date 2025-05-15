@@ -116,4 +116,4 @@ class Daily(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Daily(bot), Parser)
+    await bot.add_cog(Daily(bot), Parser())
