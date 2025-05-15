@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord import app_commands
 import requests
 import datetime
+import html
 from html.parser import HTMLParser
 from lib.dbfuncs import track_queries
 
@@ -17,7 +18,7 @@ class Parser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == 'code':
             self.out.append('`')
-        elif tag == {'strong', 'b'}:
+        elif tag in {'strong', 'b'}:
             self.out.append('**')
         elif tag == 'li':
             self.out.append('• ')
@@ -29,7 +30,7 @@ class Parser(HTMLParser):
     def handle_endtag(self, tag):
         if tag == 'code':
             self.out.append('`')
-        elif tag == {'strong', 'b'}:
+        elif tag in {'strong', 'b'}:
             self.out.append('**')
         elif tag == 'li':
             self.out.append('\n')
@@ -71,6 +72,7 @@ class Daily(commands.Cog):
             q_diff = response['difficulty']
             q_prem = response['isPaidOnly']
             q_desc = response['question']
+            q_desc = html.unescape(q_desc)
             self.parser.feed(q_desc)
             q_desc = self.parser.get_text()
             topics = [topic['name'] for topic in response['topicTags']]
