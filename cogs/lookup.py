@@ -108,7 +108,7 @@ class Lookup(commands.Cog):
             except Exception as e:
                 traceback.print_exc()
         # get user challenge stats
-        if ":cry:" not in description:
+        if ":catsad:" not in description:
             challenge_stats = dbfuncs.get_user_challenge_stats(discord_name)
             wins,losses,quits = challenge_stats
             description += f":crossed_swords: Challenge Stats:\n{wins} {'win' if wins == 1 else 'wins'}, {losses} {'loss' if losses == 1 else 'losses'}, {quits} {'quit' if quits == 1 else 'quits'}"

@@ -41,13 +41,13 @@ class Parser(HTMLParser):
 
     def get_text(self):
         text = ''.join(self.out)
+        self.reset()
         return re.sub(r'\n{2,}', '\n', text).strip()
 
 
 class Daily(commands.Cog):
-    def __init__(self, bot, parser):
+    def __init__(self, bot):
         self.bot = bot
-        self.parser = parser
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -71,8 +71,9 @@ class Daily(commands.Cog):
             q_diff = response['difficulty']
             q_prem = response['isPaidOnly']
             q_desc = response['question']
-            self.parser.feed(q_desc)
-            q_desc = self.parser.get_text()
+            qparser = Parser()
+            qparser.feed(q_desc)
+            q_desc = qparser.get_text()
             topics = [topic['name'] for topic in response['topicTags']]
             hints = response['hints']
             likes = response['likes']
@@ -100,7 +101,11 @@ class Daily(commands.Cog):
             
             desc_string += '\n'
             desc_string += '\nHints:\n'
-            desc_string += '\n'.join(['- ||'+hint+'||' for hint in hints])
+            for hint in hints:
+                hint_parser = Parser()
+                hint_parser.feed(hint)
+                clean_hint = hint_parser.get_text()
+                desc_string += f'- ||{clean_hint}||\n'
             desc_string += f'\n:+1:{likes}, :-1:{dislikes}\n'
             
             if len(desc_string) >= 4096 :
@@ -116,4 +121,4 @@ class Daily(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(Daily(bot), Parser())
+    await bot.add_cog(Daily(bot))
