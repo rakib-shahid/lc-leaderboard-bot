@@ -49,32 +49,39 @@ def track_queries(func):
     return wrapper
 
 @with_db
-def update_query_count(cursor,discord_id,discord_user):
+def update_query_count(cursor, discord_id: int, discord_user: str):
     try:
         cursor.execute(
-            "SELECT leetcode_username FROM account_owner WHERE LOWER(discord_username) = LOWER(%s);",
-            (discord_user,),
+            "SELECT id, discord_id, discord_name FROM users WHERE discord_id = %s;",
+            (discord_id,)
         )
-        leetcode_username = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        if not result:
+            print(f"[TRACKING] No user found for discord_user '{discord_user}'")
+            return
+        user_id, current_discord_id, current_discord_name = result
+
+        if current_discord_name is None or current_discord_name.lower() != discord_user.lower():
+            cursor.execute(
+                "UPDATE users SET discord_name = %s WHERE id = %s;",
+                (discord_user, user_id)
+            )
+
         cursor.execute(
-            "SELECT id FROM users WHERE LOWER(username) = LOWER(%s);",
-            (leetcode_username,),
-        )
-        user_id = cursor.fetchone()[0]
-        cursor.execute(
-            "SELECT * FROM queries WHERE user_id = %s;",
-            (user_id,),
+            "SELECT 1 FROM queries WHERE user_id = %s;",
+            (user_id,)
         )
         if cursor.fetchone():
             cursor.execute(
                 "UPDATE queries SET queries = queries + 1 WHERE user_id = %s;",
-                (user_id,),
+                (user_id,)
             )
         else:
             cursor.execute(
-                "INSERT INTO queries (user_id, discord_id,queries) VALUES (%s, %s, %s);",
-                (user_id, str(discord_id), 1),
-        )   
+                "INSERT INTO queries (user_id, discord_id, queries) VALUES (%s, %s, %s);",
+                (user_id, discord_id, 1)
+            )
+
     except Exception as e:
         print("[TRACKING]: Error tracking! See error")
         traceback.print_exc()
@@ -82,17 +89,17 @@ def update_query_count(cursor,discord_id,discord_user):
 @with_db
 def check_leetcode_user(cursor, leetcode_username):
     cursor.execute(
-        "SELECT * FROM account_owner WHERE LOWER(leetcode_username) = LOWER(%s);",
+        "SELECT * FROM users WHERE LOWER(username) = LOWER(%s);",
         (leetcode_username,),
     )
     return cursor.fetchall()
 
 
 @with_db
-def check_discord_user(cursor, discord_id):
+def check_discord_user(cursor, discord_username):
     cursor.execute(
-        "SELECT * FROM account_owner WHERE LOWER(discord_username) = LOWER(%s);",
-        (discord_id,),
+        "SELECT * FROM users WHERE LOWER(discord_name) = LOWER(%s);",
+        (discord_username,),
     )
     return cursor.fetchall()
 
@@ -100,7 +107,7 @@ def check_discord_user(cursor, discord_id):
 @with_db
 def get_leetcode_from_discord(cursor, discord_username):
     cursor.execute(
-        "SELECT leetcode_username FROM account_owner WHERE LOWER(discord_username) = LOWER(%s);",
+        "SELECT username FROM users WHERE LOWER(discord_name) = LOWER(%s);",
         (discord_username,),
     )
     record = cursor.fetchall()
@@ -109,7 +116,7 @@ def get_leetcode_from_discord(cursor, discord_username):
 @with_db
 def get_discord_from_leetcode(cursor, leetcode_username):
     cursor.execute(
-        "SELECT discord_username FROM account_owner WHERE LOWER(leetcode_username) = LOWER(%s);",
+        "SELECT discord_name FROM users WHERE LOWER(username) = LOWER(%s);",
         (leetcode_username,),
     )
     record = cursor.fetchall()
@@ -117,30 +124,42 @@ def get_discord_from_leetcode(cursor, leetcode_username):
 
 
 @with_db
-def add_user(cursor, discord_id, leetcode_username):
+def add_user(cursor, discord_username, discord_id, leetcode_username):
     try:
         cursor.execute(
-            "INSERT INTO account_owner (discord_username, leetcode_username) VALUES (%s, %s);",
-            (discord_id, leetcode_username),
+            """
+            INSERT INTO users (username, discord_id, discord_name)
+            VALUES (LOWER(%s), %s, %s)
+            ON CONFLICT (username) DO NOTHING;
+            """,
+            (leetcode_username, discord_id, discord_username)
         )
-        cursor.execute(
-            "INSERT INTO users (username) VALUES (LOWER(%s));", (leetcode_username,)
-        )
+
         cursor.execute(
             "SELECT id FROM users WHERE LOWER(username) = LOWER(%s);",
-            (leetcode_username,),
+            (leetcode_username,)
         )
         user_id = cursor.fetchone()[0]
+
         cursor.execute(
-            "INSERT INTO points (user_id, points, wins) VALUES (%s, 0, 0);", (user_id,)
+            "INSERT INTO points (user_id, points, wins) VALUES (%s, 0, 0) ON CONFLICT (user_id) DO NOTHING;",
+            (user_id,)
         )
+
+        cursor.execute(
+            "INSERT INTO queries (user_id, discord_id, queries) VALUES (%s, %s, 1) ON CONFLICT (user_id) DO NOTHING;",
+            (user_id, discord_id)
+        )
+
         cursor.execute(
             """
             INSERT INTO last_completed (user_id, problem_name, completed_at)
-            VALUES (%s, %s, CURRENT_TIMESTAMP);
+            VALUES (%s, %s, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id) DO NOTHING;
             """,
-            (user_id, "PLACEHOLDERPROBLEMNAMEFORINITIALREGISTRATION"),
+            (user_id, "PLACEHOLDERPROBLEMNAMEFORINITIALREGISTRATION")
         )
+
         return True, ""
     except Exception as e:
         return False, str(e)
@@ -150,30 +169,36 @@ def add_user(cursor, discord_id, leetcode_username):
 def remove_user(cursor, discord_id):
     try:
         cursor.execute(
-            "SELECT leetcode_username FROM account_owner WHERE LOWER(discord_username) = LOWER(%s);",
-            (discord_id,),
+            "SELECT id FROM users WHERE discord_id = %s;",
+            (discord_id,)
         )
-        leetcode_username = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        if not result:
+            return False, f"No user found with discord_id {discord_id}"
+
+        user_id = result[0]
+
         cursor.execute(
-            "DELETE FROM last_completed WHERE user_id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s));",
-            (leetcode_username,),
-        )
-        cursor.execute(
-            "DELETE FROM user_submissions WHERE user_id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s));",
-            (leetcode_username,),
-        )
-        cursor.execute(
-            "DELETE FROM points WHERE user_id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s));",
-            (leetcode_username,),
+            "DELETE FROM last_completed WHERE user_id = %s;",
+            (user_id,)
         )
         cursor.execute(
-            "DELETE FROM users WHERE LOWER(username) = LOWER(%s);",
-            (leetcode_username,),
+            "DELETE FROM user_submissions WHERE user_id = %s;",
+            (user_id,)
         )
         cursor.execute(
-            "DELETE FROM account_owner WHERE LOWER(discord_username) = LOWER(%s);",
-            (discord_id,),
+            "DELETE FROM points WHERE user_id = %s;",
+            (user_id,)
         )
+        cursor.execute(
+            "DELETE FROM queries WHERE user_id = %s;",
+            (user_id,)
+        )
+        cursor.execute(
+            "DELETE FROM users WHERE id = %s;",
+            (user_id,)
+        )
+
         return True, ""
     except Exception as e:
         return False, str(e)

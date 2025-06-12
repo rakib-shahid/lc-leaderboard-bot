@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class AdminPoints(commands.Cog):
     def __init__(self, bot):
@@ -21,6 +21,7 @@ class AdminPoints(commands.Cog):
     @app_commands.describe(leetcode_user="leetcode user to add points")
     @app_commands.describe(points="points to add")
     @track_queries
+    @maintenance_check()
     async def adminpoints(
         self,
         interaction: discord.Interaction,

@@ -6,6 +6,7 @@ import datetime
 import lib.dbfuncs as dbfuncs
 import traceback
 from lib.dbfuncs import track_queries
+from lib.maintenance import maintenance_check
 
 class WinHistory(commands.Cog):
     def __init__(self, bot):
@@ -21,6 +22,7 @@ class WinHistory(commands.Cog):
         description="View the latest 10 winners.",
     )
     @track_queries
+    @maintenance_check()
     async def winhistory(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:

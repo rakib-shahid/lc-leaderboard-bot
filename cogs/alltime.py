@@ -4,6 +4,7 @@ from discord import app_commands
 import requests
 import datetime
 from lib.dbfuncs import track_queries
+from lib.maintenance import maintenance_check
 
 class AllTime(commands.Cog):
     def __init__(self, bot):
@@ -19,6 +20,7 @@ class AllTime(commands.Cog):
         description="View the top 10 users of all tiem.",
     )
     @track_queries
+    @maintenance_check()
     async def alltime(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:

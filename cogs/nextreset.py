@@ -6,7 +6,7 @@ import datetime
 import traceback
 import time
 from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class NextReset(commands.Cog):
     def __init__(self, bot):
@@ -21,6 +21,7 @@ class NextReset(commands.Cog):
         description="Check when the next leaderboard reset is.",
     )
     @track_queries
+    @maintenance_check()
     async def nextreset(self, interaction: discord.Interaction):
         await interaction.response.defer()
         

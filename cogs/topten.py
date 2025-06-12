@@ -4,6 +4,7 @@ from discord import app_commands
 import requests
 import datetime
 from lib.dbfuncs import track_queries
+from lib.maintenance import maintenance_check
 
 class TopTen(commands.Cog):
     def __init__(self, bot):
@@ -19,7 +20,8 @@ class TopTen(commands.Cog):
         description="View the top 10 users.",
     )
     @track_queries
-    async def top10(self, interaction: discord.Interaction):
+    @maintenance_check()
+    async def topten(self, interaction: discord.Interaction):
         await interaction.response.defer()
         # update_query_count(interaction.user.id, interaction.user.name)
         try:

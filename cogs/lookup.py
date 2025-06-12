@@ -7,6 +7,7 @@ import requests
 import datetime
 import traceback
 from lib.dbfuncs import track_queries
+from lib.maintenance import maintenance_check
 
 
 class Lookup(commands.Cog):
@@ -23,6 +24,7 @@ class Lookup(commands.Cog):
     )
     @app_commands.describe(username="enter discord or leetcode username")
     @track_queries
+    @maintenance_check()
     async def lookup(self, interaction: discord.Interaction, username: str):
         await interaction.response.defer()
         embed = discord.Embed(title=f"User Lookup - {username}", timestamp=datetime.datetime.now())

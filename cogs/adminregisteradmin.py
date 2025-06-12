@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class AdminRegisterAdmin(commands.Cog):
     def __init__(self, bot):
@@ -18,6 +18,7 @@ class AdminRegisterAdmin(commands.Cog):
     )
     @app_commands.describe(discord_id="discord ID to register")
     @track_queries
+    @maintenance_check()
     async def adminregisteradmin(
         self, interaction: discord.Interaction, discord_id: str
     ):

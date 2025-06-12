@@ -10,7 +10,7 @@ import re, io
 import urllib.parse
 import validators
 import requests
-
+from lib.maintenance import maintenance_check
 import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
 
@@ -132,6 +132,7 @@ class LeetcodeSolution(commands.Cog):
     )
     @app_commands.choices(mode=LEET_MODE_CHOICES)
     @track_queries
+    @maintenance_check()
     async def leetcode(
         self,
         itx: discord.Interaction,

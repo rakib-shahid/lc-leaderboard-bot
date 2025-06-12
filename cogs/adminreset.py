@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class AdminReset(commands.Cog):
     def __init__(self, bot):
@@ -27,7 +27,8 @@ class AdminReset(commands.Cog):
         ]
     )
     @track_queries
-    async def AdminReset(
+    @maintenance_check()
+    async def adminreset(
         self,
         interaction: discord.Interaction,
         confirmation: typing.Optional[str],

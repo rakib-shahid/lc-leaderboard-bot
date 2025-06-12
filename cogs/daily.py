@@ -7,6 +7,7 @@ import requests
 import datetime
 from html.parser import HTMLParser
 from lib.dbfuncs import track_queries
+from lib.maintenance import maintenance_check
 
 
 class Parser(HTMLParser):
@@ -58,6 +59,7 @@ class Daily(commands.Cog):
         description="View the LeetCode Daily question.",
     )
     @track_queries
+    @maintenance_check()
     async def daily(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:

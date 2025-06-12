@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from lib.dbfuncs import track_queries
 import lib.dbfuncs as dbfuncs
-
+from lib.maintenance import maintenance_check
 
 class AdminRegister(commands.Cog):
     def __init__(self, bot):
@@ -17,6 +17,7 @@ class AdminRegister(commands.Cog):
     @app_commands.describe(discord_user="discord user to register")
     @app_commands.describe(leetcode_user="leetcode user to register")
     # @track_queries
+    @maintenance_check()
     async def adminregister(
         self, interaction: discord.Interaction, discord_user: str, leetcode_user: str
     ):

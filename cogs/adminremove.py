@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class AdminRemove(commands.Cog):
     def __init__(self, bot):
@@ -16,6 +16,7 @@ class AdminRemove(commands.Cog):
     @app_commands.command(name="zremove", description="Remove a user (ADMIN ONLY)")
     @app_commands.describe(discord_user="discord user to remove")
     @track_queries
+    @maintenance_check()
     async def adminremove(self, interaction: discord.Interaction, discord_user: str):
         await interaction.response.defer()
         admins = dbfuncs.get_admins()

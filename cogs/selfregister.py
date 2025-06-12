@@ -4,7 +4,7 @@ from discord import app_commands
 import requests
 import lib.dbfuncs as dbfuncs
 # from lib.dbfuncs import track_queries
-
+from lib.maintenance import maintenance_check
 
 class SelfRegister(commands.Cog):
     def __init__(self, bot):
@@ -20,6 +20,7 @@ class SelfRegister(commands.Cog):
     )
     @app_commands.describe(leetcode_user="link your discord to this leetcode account")
     # @track_queries
+    @maintenance_check()
     async def selfregister(self, interaction: discord.Interaction, leetcode_user: str):
         await interaction.response.defer()
         try:
@@ -48,7 +49,7 @@ class SelfRegister(commands.Cog):
                 await interaction.followup.send(f"Invalid LeetCode username: {leetcode_user}! Register with your **LeetCode** username.")
                 return
             
-            dbfuncs.add_user(interaction.user.name, leetcode_user)
+            dbfuncs.add_user(interaction.user.name, leetcode_user,interaction.user.id)
             await interaction.followup.send(
                 f"Registered {interaction.user.name} as {leetcode_user}"
             )

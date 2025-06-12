@@ -9,6 +9,7 @@ import asyncio
 import random
 import requests
 from typing import Optional
+from lib.maintenance import maintenance_check
 
 async def get_question(user1,user2,difficulty=None):
     difficulty_count = {
@@ -257,6 +258,7 @@ class Challenge(commands.Cog):
         app_commands.Choice(name="Hard", value="HARD"),
         ])
     @track_queries
+    @maintenance_check()
     async def challenge(
         self, interaction: discord.Interaction, discord_user: discord.Member, difficulty: Optional[discord.app_commands.Choice[str]]
     ):
