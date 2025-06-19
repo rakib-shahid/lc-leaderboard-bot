@@ -5,6 +5,7 @@ import lib.dbfuncs as dbfuncs
 from lib.dbfuncs import track_queries
 from lib.maintenance import maintenance_check
 
+
 class AdminRemove(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -17,7 +18,9 @@ class AdminRemove(commands.Cog):
     @app_commands.describe(discord_user="discord user to remove")
     @track_queries
     @maintenance_check()
-    async def adminremove(self, interaction: discord.Interaction, discord_user: str):
+    async def adminremove(
+        self, interaction: discord.Interaction, discord_user: str, discord_id: str
+    ):
         await interaction.response.defer()
         admins = dbfuncs.get_admins()
         admins = set([admin[0] for admin in admins])
@@ -27,9 +30,10 @@ class AdminRemove(commands.Cog):
                 await interaction.followup.send(out)
                 return
 
-            dbfuncs.remove_user(discord_user)
+            result = dbfuncs.remove_user(discord_id)
+            print(result)
             await interaction.followup.send(
-                f"Removed {discord_user} from leaderboard and database."
+                f"Removed {discord_user},{discord_id} from leaderboard and database."
             )
 
         else:

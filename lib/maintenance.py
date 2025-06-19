@@ -5,12 +5,14 @@ from discord.app_commands import CheckFailure
 
 MAINTENANCE_COMMANDS = {
     # "challenge",
-    "register",
-    "remove",
+    # "register",
+    # "remove",
 }
+
 
 class MaintenanceCheckFailure(CheckFailure):
     pass
+
 
 def maintenance_check():
     async def predicate(interaction: Interaction) -> bool:
@@ -27,5 +29,5 @@ def maintenance_check():
             await interaction.response.send_message(embed=embed, ephemeral=True)
             raise MaintenanceCheckFailure()
         return True
-    return app_commands.check(predicate)
 
+    return app_commands.check(predicate)

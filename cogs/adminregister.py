@@ -5,6 +5,7 @@ from lib.dbfuncs import track_queries
 import lib.dbfuncs as dbfuncs
 from lib.maintenance import maintenance_check
 
+
 class AdminRegister(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -19,7 +20,11 @@ class AdminRegister(commands.Cog):
     # @track_queries
     @maintenance_check()
     async def adminregister(
-        self, interaction: discord.Interaction, discord_user: str, leetcode_user: str
+        self,
+        interaction: discord.Interaction,
+        discord_user: str,
+        discord_id: str,
+        leetcode_user: str,
     ):
         await interaction.response.defer()
         admins = dbfuncs.get_admins()
@@ -40,8 +45,11 @@ class AdminRegister(commands.Cog):
                     out += f" with Discord: {dc_user}"
                 await interaction.followup.send(out)
                 return
-
-            dbfuncs.add_user(discord_user, leetcode_user)
+            try:
+                result = dbfuncs.add_user(discord_user, discord_id, leetcode_user)
+                print(result)
+            except Exception as e:
+                print(e)
             await interaction.followup.send(
                 f"Registered {discord_user} as {leetcode_user}"
             )

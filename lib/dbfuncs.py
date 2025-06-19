@@ -4,6 +4,7 @@ import os
 import time
 import sys
 import traceback
+
 sys.path.append(os.path.abspath("../"))
 import config
 
@@ -26,6 +27,7 @@ class DBConnection:
 
 def with_db(func):
     """Decorator to handle database connection and cursor."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         conn = DBConnection()
@@ -39,21 +41,25 @@ def with_db(func):
             raise e
         finally:
             conn.close()
+
     return wrapper
+
 
 def track_queries(func):
     @wraps(func)
     async def wrapper(self, interaction, *args, **kwargs):
         update_query_count(interaction.user.id, interaction.user.name)
         return await func(self, interaction, *args, **kwargs)
+
     return wrapper
+
 
 @with_db
 def update_query_count(cursor, discord_id: int, discord_user: str):
     try:
         cursor.execute(
             "SELECT id, discord_id, discord_name FROM users WHERE discord_id = %s;",
-            (discord_id,)
+            (discord_id,),
         )
         result = cursor.fetchone()
         if not result:
@@ -61,30 +67,31 @@ def update_query_count(cursor, discord_id: int, discord_user: str):
             return
         user_id, current_discord_id, current_discord_name = result
 
-        if current_discord_name is None or current_discord_name.lower() != discord_user.lower():
+        if (
+            current_discord_name is None
+            or current_discord_name.lower() != discord_user.lower()
+        ):
             cursor.execute(
                 "UPDATE users SET discord_name = %s WHERE id = %s;",
-                (discord_user, user_id)
+                (discord_user, user_id),
             )
 
-        cursor.execute(
-            "SELECT 1 FROM queries WHERE user_id = %s;",
-            (user_id,)
-        )
+        cursor.execute("SELECT 1 FROM queries WHERE user_id = %s;", (user_id,))
         if cursor.fetchone():
             cursor.execute(
                 "UPDATE queries SET queries = queries + 1 WHERE user_id = %s;",
-                (user_id,)
+                (user_id,),
             )
         else:
             cursor.execute(
                 "INSERT INTO queries (user_id, discord_id, queries) VALUES (%s, %s, %s);",
-                (user_id, discord_id, 1)
+                (user_id, discord_id, 1),
             )
 
     except Exception as e:
         print("[TRACKING]: Error tracking! See error")
         traceback.print_exc()
+
 
 @with_db
 def check_leetcode_user(cursor, leetcode_username):
@@ -113,6 +120,7 @@ def get_leetcode_from_discord(cursor, discord_username):
     record = cursor.fetchall()
     return record[0][0] if record else None
 
+
 @with_db
 def get_discord_from_leetcode(cursor, leetcode_username):
     cursor.execute(
@@ -132,23 +140,23 @@ def add_user(cursor, discord_username, discord_id, leetcode_username):
             VALUES (LOWER(%s), %s, %s)
             ON CONFLICT (username) DO NOTHING;
             """,
-            (leetcode_username, discord_id, discord_username)
+            (leetcode_username, discord_id, discord_username),
         )
 
         cursor.execute(
             "SELECT id FROM users WHERE LOWER(username) = LOWER(%s);",
-            (leetcode_username,)
+            (leetcode_username,),
         )
         user_id = cursor.fetchone()[0]
 
         cursor.execute(
             "INSERT INTO points (user_id, points, wins) VALUES (%s, 0, 0) ON CONFLICT (user_id) DO NOTHING;",
-            (user_id,)
+            (user_id,),
         )
 
         cursor.execute(
             "INSERT INTO queries (user_id, discord_id, queries) VALUES (%s, %s, 1) ON CONFLICT (user_id) DO NOTHING;",
-            (user_id, discord_id)
+            (user_id, discord_id),
         )
 
         cursor.execute(
@@ -157,7 +165,7 @@ def add_user(cursor, discord_username, discord_id, leetcode_username):
             VALUES (%s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id) DO NOTHING;
             """,
-            (user_id, "PLACEHOLDERPROBLEMNAMEFORINITIALREGISTRATION")
+            (user_id, "PLACEHOLDERPROBLEMNAMEFORINITIALREGISTRATION"),
         )
 
         return True, ""
@@ -168,36 +176,18 @@ def add_user(cursor, discord_username, discord_id, leetcode_username):
 @with_db
 def remove_user(cursor, discord_id):
     try:
-        cursor.execute(
-            "SELECT id FROM users WHERE discord_id = %s;",
-            (discord_id,)
-        )
+        cursor.execute("SELECT id FROM users WHERE discord_id = %s;", (discord_id,))
         result = cursor.fetchone()
         if not result:
             return False, f"No user found with discord_id {discord_id}"
 
         user_id = result[0]
 
-        cursor.execute(
-            "DELETE FROM last_completed WHERE user_id = %s;",
-            (user_id,)
-        )
-        cursor.execute(
-            "DELETE FROM user_submissions WHERE user_id = %s;",
-            (user_id,)
-        )
-        cursor.execute(
-            "DELETE FROM points WHERE user_id = %s;",
-            (user_id,)
-        )
-        cursor.execute(
-            "DELETE FROM queries WHERE user_id = %s;",
-            (user_id,)
-        )
-        cursor.execute(
-            "DELETE FROM users WHERE id = %s;",
-            (user_id,)
-        )
+        cursor.execute("DELETE FROM last_completed WHERE user_id = %s;", (user_id,))
+        cursor.execute("DELETE FROM user_submissions WHERE user_id = %s;", (user_id,))
+        cursor.execute("DELETE FROM points WHERE user_id = %s;", (user_id,))
+        cursor.execute("DELETE FROM queries WHERE user_id = %s;", (user_id,))
+        cursor.execute("DELETE FROM users WHERE id = %s;", (user_id,))
 
         return True, ""
     except Exception as e:
@@ -246,8 +236,9 @@ def get_win_history(cursor, original_rows=False):
     for row in data:
         row[1] = time.mktime(row[1].timetuple())
         row.append(get_discord_from_leetcode(row[0]))
-        row[0],row[1],row[2] = row[2],row[0],row[1]
+        row[0], row[1], row[2] = row[2], row[0], row[1]
     return data
+
 
 @with_db
 def get_points(cursor, problem_slug=None):
@@ -286,19 +277,21 @@ def add_admin(cursor, discord_id):
     except Exception as e:
         return False, str(e)
 
+
 @with_db
-def check_if_user_did_problem(cursor,discord_user,problem_name):
+def check_if_user_did_problem(cursor, discord_user, problem_name):
     leetcode_username = get_leetcode_from_discord(discord_user)
     cursor.execute(
         "SELECT * FROM user_submissions WHERE user_id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s)) AND problem_name = %s;",
-        (leetcode_username,problem_name),
+        (leetcode_username, problem_name),
     )
-    
+
     return cursor.fetchall()
 
+
 @with_db
-def check_if_user_busy(cursor,discord_user):
-    
+def check_if_user_busy(cursor, discord_user):
+
     leetcode_username = get_leetcode_from_discord(discord_user)
     cursor.execute(
         "SELECT busy FROM challenge WHERE id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s));",
@@ -314,9 +307,10 @@ def check_if_user_busy(cursor,discord_user):
         )
         return False
     return result[0][0]
-        
+
+
 @with_db
-def set_user_busy(cursor,discord_user,busy=True):
+def set_user_busy(cursor, discord_user, busy=True):
     leetcode_username = get_leetcode_from_discord(discord_user)
     cursor.execute(
         "UPDATE challenge SET busy = %s WHERE id = (SELECT id FROM users WHERE LOWER(username) = LOWER(%s));",
@@ -340,6 +334,7 @@ def add_loss(cursor, discord_user):
     updated_losses = cursor.fetchone()[0]
     return updated_losses
 
+
 @with_db
 def add_win(cursor, discord_user):
     leetcode_username = get_leetcode_from_discord(discord_user)
@@ -354,6 +349,7 @@ def add_win(cursor, discord_user):
     )
     updated_wins = cursor.fetchone()[0]
     return updated_wins
+
 
 @with_db
 def add_quit(cursor, discord_user):
@@ -370,6 +366,7 @@ def add_quit(cursor, discord_user):
     updated_quits = cursor.fetchone()[0]
     return updated_quits
 
+
 @with_db
 def get_wins(cursor, discord_user):
     leetcode_username = get_leetcode_from_discord(discord_user)
@@ -383,6 +380,7 @@ def get_wins(cursor, discord_user):
     )
     result = cursor.fetchone()
     return result[0] if result else 0
+
 
 @with_db
 def get_losses(cursor, discord_user):
@@ -398,6 +396,7 @@ def get_losses(cursor, discord_user):
     result = cursor.fetchone()
     return result[0] if result else 0
 
+
 @with_db
 def get_quits(cursor, discord_user):
     leetcode_username = get_leetcode_from_discord(discord_user)
@@ -411,6 +410,7 @@ def get_quits(cursor, discord_user):
     )
     result = cursor.fetchone()
     return result[0] if result else 0
+
 
 @with_db
 def get_user_challenge_stats(cursor, discord_user):
