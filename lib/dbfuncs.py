@@ -63,7 +63,9 @@ def update_query_count(cursor, discord_id: int, discord_user: str):
         )
         result = cursor.fetchone()
         if not result:
-            print(f"[TRACKING] No user found for discord_user '{discord_user}'")
+            print(
+                f"[TRACKING] No user found for discord_user '{discord_user},{discord_id}'"
+            )
             return
         user_id, current_discord_id, current_discord_name = result
 
