@@ -1,4 +1,6 @@
 import psycopg2
+import re
+import requests
 from functools import wraps
 import os
 import time
@@ -427,3 +429,40 @@ def get_user_challenge_stats(cursor, discord_user):
     )
     result = cursor.fetchone()
     return list(result) if result else [0, 0, 0]
+
+
+@with_db
+def add_bookmark(cursor, discord_id, problem_url):
+    try:
+        match = re.search(r"/problems/([^/]+)/?", problem_url)
+        if not match:
+            return False, "❌ Could not extract a valid problem slug from the URL"
+
+        slug = match.group(1)
+
+        check_url = f"https://leetcode.server.rakibshahid.com/select?titleSlug={slug}"
+        response = requests.get(check_url)
+
+        if response.status_code != 200:
+            return False, f"Failed to validate slug (HTTP {response.status_code})"
+
+        json_data = response.json()
+        if not json_data:
+            return False, f"❌ `{slug}` is not a valid LeetCode problem"
+
+        cursor.execute("SELECT id FROM users WHERE discord_id = %s;", (discord_id,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            return False, "User not found"
+
+        user_id = user_row[0]
+
+        cursor.execute(
+            "INSERT INTO bookmarks (user_id, problem_slug) VALUES (%s, %s) ON CONFLICT DO NOTHING;",
+            (user_id, slug),
+        )
+
+        return True, slug
+
+    except Exception as e:
+        return False, str(e)

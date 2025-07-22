@@ -18,7 +18,7 @@ class AllTime(commands.Cog):
 
     @app_commands.command(
         name="alltime",
-        description="View the top 10 users of all tiem.",
+        description="View the top 10 users of all time.",
     )
     @track_queries
     @maintenance_check()
