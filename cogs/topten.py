@@ -5,6 +5,7 @@ import requests
 import datetime
 from lib.dbfuncs import track_queries
 from lib.maintenance import maintenance_check
+import traceback
 
 
 class TopTen(commands.Cog):
@@ -31,7 +32,7 @@ class TopTen(commands.Cog):
             data = response.json()
             embed = self.create_detailed_embed(data, interaction.user.name)
 
-            view = discord.ui.View()
+            view = discord.ui.View(timeout=None)
             toggle_button = discord.ui.Button(
                 label="Toggle View", style=discord.ButtonStyle.primary
             )
@@ -51,20 +52,26 @@ class TopTen(commands.Cog):
             toggle_button.callback = button_callback
 
         except Exception as e:
+            traceback.print_exc()
             print(e)
 
     def create_mobile_embed(self, data, user_name):
-        description = "View full leaderboard at [codeforall.nyc](https://www.codeforall.nyc/leaderboard)\n"
-        leetcode_emoji = self.bot.get_emoji(1290903612351844464)
-        discord_emoji = self.bot.get_emoji(1290903900169310248)
-        for i in range(10):
-            cleaned_discord_username = (
-                str(data[i]["discord_username"]).replace("_", "\\_").replace("*", "\\*")
-            )
-            cleaned_leetcode_username = (
-                str(data[i]["username"]).replace("_", "\\_").replace("*", "\\*")
-            )
-            description += f"{str(f'{i + 1}.')}{str(data[i]['points']).rjust(5):.2f} pts - {discord_emoji}{cleaned_discord_username} ([{leetcode_emoji}{cleaned_leetcode_username}](https://leetcode.com/u/{data[i]['username']}))\n"
+        try:
+            description = "View full leaderboard at [codeforall.nyc](https://www.codeforall.nyc/leaderboard)\n"
+            leetcode_emoji = self.bot.get_emoji(1290903612351844464)
+            discord_emoji = self.bot.get_emoji(1290903900169310248)
+            for i in range(10):
+                cleaned_discord_username = (
+                    str(data[i]["discord_username"])
+                    .replace("_", "\\_")
+                    .replace("*", "\\*")
+                )
+                cleaned_leetcode_username = (
+                    str(data[i]["username"]).replace("_", "\\_").replace("*", "\\*")
+                )
+                description += f"{str(f'{i + 1}.')}{float(data[i]['points']):>6.2f} pts - {discord_emoji}{cleaned_discord_username} ([{leetcode_emoji}{cleaned_leetcode_username}](https://leetcode.com/u/{data[i]['username']}))\n"
+        except Exception as e:
+            print("[ERROR] :", e)
         embed = discord.Embed(
             title="Top 10 Users - Mobile View",
             description=description,
