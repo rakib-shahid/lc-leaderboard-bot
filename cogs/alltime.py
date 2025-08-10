@@ -5,6 +5,7 @@ import requests
 import datetime
 from lib.dbfuncs import track_queries
 from lib.maintenance import maintenance_check
+import config
 
 
 class AllTime(commands.Cog):
@@ -25,7 +26,7 @@ class AllTime(commands.Cog):
     async def alltime(self, interaction: discord.Interaction):
         await interaction.response.defer()
         try:
-            url = "https://server.rakibshahid.com/leaderboard/leaderboard_history"
+            url = f"{config.SERVER_URL}/leaderboard/leaderboard_history"
             response = requests.get(url)
             data = response.json()
             embed = self.create_detailed_embed(data, interaction.user.name)

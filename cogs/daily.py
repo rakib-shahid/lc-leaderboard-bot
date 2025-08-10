@@ -9,6 +9,7 @@ from html.parser import HTMLParser
 from lib.dbfuncs import track_queries
 from lib.maintenance import maintenance_check
 import lib.dbfuncs as dbfuncs
+import config
 
 
 class Parser(HTMLParser):
@@ -68,7 +69,7 @@ class Daily(commands.Cog):
             embed = discord.Embed(
                 title=f"Daily Question {date}", timestamp=datetime.datetime.now()
             )
-            url = "https://leetcode.server.rakibshahid.com/daily"
+            url = f"{config.LC_SERVER_URL}/daily"
             response = requests.get(url).json()
             q_link = response["questionLink"]
             q_id = response["questionFrontendId"]

@@ -1,4 +1,5 @@
 import discord
+import config
 from discord.ext import commands
 from discord import app_commands
 import lib.dbfuncs as dbfuncs
@@ -37,8 +38,8 @@ class Lookup(commands.Cog):
             url="https://media1.tenor.com/m/lxJgp-a8MrgAAAAd/laeppa-vika-half-life-alyx.gif"
         )
         urls = [
-            "https://server.rakibshahid.com/api/discord_lookup",
-            "https://server.rakibshahid.com/api/leetcode_lookup",
+            f"{config.SERVER_URL}/api/discord_lookup",
+            f"{config.SERVER_URL}/api/leetcode_lookup",
         ]
         # get emojis
         emojimap = emojis.get_all_emojis(self)
@@ -79,7 +80,7 @@ class Lookup(commands.Cog):
                     )
 
                     # get leetcode ac
-                    leetcode_ac_url = "https://server.rakibshahid.com/api/leetcode_ac"
+                    leetcode_ac_url = f"{config.SERVER_URL}/api/leetcode_ac"
                     leetcode_ac_response = requests.get(
                         leetcode_ac_url,
                         headers={"leetcode-username": data["leetcode_username"]},

@@ -1,4 +1,5 @@
 import discord
+import config
 from discord.ext import commands
 from discord import app_commands
 import requests
@@ -44,7 +45,7 @@ class SelfRegister(commands.Cog):
                 return
 
             # check if user actually entered their leetcode username
-            url = "https://server.rakibshahid.com/api/leetcode_ac"
+            url = f"{config.LC_SERVER_URL}/api/leetcode_ac"
             headers = {"leetcode-username": leetcode_user}
             response = requests.get(url, headers=headers)
             if response.status_code != 200 or response.json().get("count") == 0:

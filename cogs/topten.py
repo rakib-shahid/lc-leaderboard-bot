@@ -1,4 +1,5 @@
 import discord
+import config
 from discord.ext import commands
 from discord import app_commands
 import requests
@@ -27,7 +28,7 @@ class TopTen(commands.Cog):
         await interaction.response.defer()
         # update_query_count(interaction.user.id, interaction.user.name)
         try:
-            url = "https://server.rakibshahid.com/leaderboard"
+            url = f"{config.SERVER_URL}/leaderboard"
             response = requests.get(url)
             data = response.json()
             embed = self.create_detailed_embed(data, interaction.user.name)
